@@ -1,0 +1,404 @@
+using System;
+using Microsoft.EntityFrameworkCore.Migrations;
+using ApiService.Models.Enums;
+using ApiService.Services;
+
+namespace ApiService.Data.Migrations
+{
+    public partial class InitialCreate : Migration
+    {
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            // 創建所有表
+            CreateTables(migrationBuilder);
+
+            // 添加管理員帳號
+            SeedAdminUser(migrationBuilder);
+        }
+
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            // 按照相反的順序刪除表
+            migrationBuilder.DropTable("land_crawls");
+            migrationBuilder.DropTable("import_history");
+            migrationBuilder.DropTable("logs");
+            migrationBuilder.DropTable("approvals");
+            migrationBuilder.DropTable("case_history");
+            migrationBuilder.DropTable("cases");
+            migrationBuilder.DropTable("land_ownership");
+            migrationBuilder.DropTable("land_history");
+            migrationBuilder.DropTable("lands");
+            migrationBuilder.DropTable("users");
+        }
+
+        private void CreateTables(MigrationBuilder migrationBuilder)
+        {
+            // Users table
+            migrationBuilder.CreateTable(
+                name: "users",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    account = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    password = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    password_salt = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    role = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<int>(type: "integer", nullable: false),
+                    status_reason = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    status_changed_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    last_login_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_users", x => x.id);
+                });
+
+            // Lands table
+            migrationBuilder.CreateTable(
+                name: "lands",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    city = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    district = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    land_section = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    land_number = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    address = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_lands", x => x.id);
+                });
+
+            // LandHistory table
+            migrationBuilder.CreateTable(
+                name: "land_history",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    land_id = table.Column<int>(type: "integer", nullable: false),
+                    action = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    created_by = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_land_history", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_land_history_lands_land_id",
+                        column: x => x.land_id,
+                        principalTable: "lands",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_land_history_users_created_by",
+                        column: x => x.created_by,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // LandOwnership table
+            migrationBuilder.CreateTable(
+                name: "land_ownership",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    land_id = table.Column<int>(type: "integer", nullable: false),
+                    owner_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    owner_address = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    owner_phone = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    fraction_numerator = table.Column<int>(type: "integer", nullable: false),
+                    fraction_denominator = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_land_ownership", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_land_ownership_lands_land_id",
+                        column: x => x.land_id,
+                        principalTable: "lands",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // Cases table
+            migrationBuilder.CreateTable(
+                name: "cases",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    land_id = table.Column<int>(type: "integer", nullable: false),
+                    title = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    description = table.Column<string>(type: "text", nullable: false),
+                    status = table.Column<int>(type: "integer", nullable: false),
+                    created_by = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_cases", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_cases_lands_land_id",
+                        column: x => x.land_id,
+                        principalTable: "lands",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_cases_users_created_by",
+                        column: x => x.created_by,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // CaseHistory table
+            migrationBuilder.CreateTable(
+                name: "case_history",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    case_id = table.Column<int>(type: "integer", nullable: false),
+                    action = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    created_by = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_case_history", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_case_history_cases_case_id",
+                        column: x => x.case_id,
+                        principalTable: "cases",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_case_history_users_created_by",
+                        column: x => x.created_by,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // Approvals table
+            migrationBuilder.CreateTable(
+                name: "approvals",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    case_id = table.Column<int>(type: "integer", nullable: false),
+                    approver_id = table.Column<int>(type: "integer", nullable: false),
+                    status = table.Column<int>(type: "integer", nullable: false),
+                    comment = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_approvals", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_approvals_cases_case_id",
+                        column: x => x.case_id,
+                        principalTable: "cases",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_approvals_users_approver_id",
+                        column: x => x.approver_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // Logs table
+            migrationBuilder.CreateTable(
+                name: "logs",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    user_id = table.Column<int>(type: "integer", nullable: false),
+                    action = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_logs", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_logs_users_user_id",
+                        column: x => x.user_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // ImportHistory table
+            migrationBuilder.CreateTable(
+                name: "import_history",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    file_name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    status = table.Column<int>(type: "integer", nullable: false),
+                    total_count = table.Column<int>(type: "integer", nullable: false),
+                    success_count = table.Column<int>(type: "integer", nullable: false),
+                    error_count = table.Column<int>(type: "integer", nullable: false),
+                    error_message = table.Column<string>(type: "text", nullable: true),
+                    created_by = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_import_history", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_import_history_users_created_by",
+                        column: x => x.created_by,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // LandCrawls table
+            migrationBuilder.CreateTable(
+                name: "land_crawls",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    land_id = table.Column<int>(type: "integer", nullable: false),
+                    source = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    data = table.Column<string>(type: "jsonb", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_land_crawls", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_land_crawls_lands_land_id",
+                        column: x => x.land_id,
+                        principalTable: "lands",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            // Create indexes
+            migrationBuilder.CreateIndex(
+                name: "ix_users_account",
+                table: "users",
+                column: "account",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_lands_city_district_land_section_land_number",
+                table: "lands",
+                columns: new[] { "city", "district", "land_section", "land_number" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_land_history_created_by",
+                table: "land_history",
+                column: "created_by");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_land_history_land_id",
+                table: "land_history",
+                column: "land_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_land_ownership_land_id",
+                table: "land_ownership",
+                column: "land_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_cases_created_by",
+                table: "cases",
+                column: "created_by");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_cases_land_id",
+                table: "cases",
+                column: "land_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_case_history_case_id",
+                table: "case_history",
+                column: "case_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_case_history_created_by",
+                table: "case_history",
+                column: "created_by");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_approvals_approver_id",
+                table: "approvals",
+                column: "approver_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_approvals_case_id",
+                table: "approvals",
+                column: "case_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_logs_user_id",
+                table: "logs",
+                column: "user_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_import_history_created_by",
+                table: "import_history",
+                column: "created_by");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_land_crawls_land_id",
+                table: "land_crawls",
+                column: "land_id");
+        }
+
+        private void SeedAdminUser(MigrationBuilder migrationBuilder)
+        {
+            var hasher = new PasswordHasher();
+            var (hash, salt) = hasher.HashPassword("Admin@123");  // 初始密碼
+            var now = DateTime.UtcNow;
+
+            migrationBuilder.InsertData(
+                table: "users",
+                columns: new[] {
+                    "name", "account", "password", "password_salt",
+                    "role", "status", "status_reason", "status_changed_at",
+                    "created_at", "updated_at"
+                },
+                values: new object[] {
+                    "系統管理員",
+                    "admin",
+                    hash,
+                    salt,
+                    UserRole.Manager,
+                    UserStatus.Active,
+                    "Initial admin user",
+                    now,
+                    now,
+                    now
+                });
+        }
+    }
+}
