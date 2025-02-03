@@ -111,6 +111,7 @@ graph TB
     class Next frontend
     class API,DB,MQ backend
     class PS,Spider crawler
+```
 
 ### 前端：
 - 使用react 19, swr, zustand等開發
