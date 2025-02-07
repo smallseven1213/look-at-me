@@ -27,8 +27,7 @@ namespace ApiService.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            // 設置表名為小寫（PostgreSQL慣例）
+            
             foreach (var entity in modelBuilder.Model.GetEntityTypes())
             {
                 entity.SetTableName(entity.GetTableName()?.ToLower());
