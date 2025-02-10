@@ -5,6 +5,15 @@
 ## 部份專案實作分享
 僅提供最近作品，其它作品可能需現場demo
 
+### 個人作品集
+[連結按此](https://cv-next-three.vercel.app/)
+
+負責：全端
+- 前端：React 19, zustand, tailwindcss
+- 後端：firebase
+- AI：OpenAI、vectorDB for RAG；FirebaseDB RAG Tools
+***
+
 ### 區塊鍊交易系統
 [連結按此](https://bitcoin-homework.vercel.app/zh-TW/market)
 
